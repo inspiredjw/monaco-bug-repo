@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monaco Editor Bug Repro</title>
+</head>
+<body>
+  <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
+  <div id="btn-container">
+    <button class="lang-js" data-lang="text/javascript">JavaScript</button>
+    <button class="lang-php" data-lang="application/x-php">Php</button>
+    <button class="lang-handlebars" data-lang="text/x-handlebars-template">Handlebars</button>
+    <button class="lang-cshtml" data-lang="text/x-cshtml">CSHtml</button>
+    <button class="lang-html" data-lang="text/html">Html</button>
+    <button class="lang-jshtm" data-lang="text/x-jshtm">JSHtm</button>
+  </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script src="monaco-editor/min/vs/loader.js"></script>
+  <script>
+      'use strict';
+
+      var __extends = function (d, b) {
+          for (var p in b)
+              if (b.hasOwnProperty(p))
+                  d[p] = b[p];
+          function __() { Object.defineProperty(this, "constructor", { configurable: true, value: d, writable: true }); }
+          d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+      var __decorate = function (decorators, target, key, desc) {
+          var global = window;
+          var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+          if (typeof global.Reflect === "object" && typeof global.Reflect.decorate === "function")
+              r = global.Reflect.decorate(decorators, target, key, desc);
+          else
+              for (var i = decorators.length - 1; i >= 0; i--)
+                  if (d = decorators[i])
+                      r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+          return c > 3 && r && Object.defineProperty(target, key, r), r;
+      };
+
+      require.config({ paths: { 'vs': 'https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs' }});
+      // require.config({ paths: { 'vs': 'https://shell-s3-portal.azurecomcdn.net/Content/5.0.202.75156524.161026-1033/Scripts/_oss/monaco-editor/dev/vs' }});
+
+      // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+      // the default worker url location (used when creating WebWorkers). The problem here is that
+      // HTML5 does not allow cross-domain web workers, so we need to proxy the instantion of
+      // a web worker through a same-domain script
+      window.MonacoEnvironment = {
+          getWorkerUrl: function(workerId, label) {
+              return 'monaco-editor-worker-loader-proxy.js';
+          }
+      };
+
+      require(['vs/editor/editor.main'], function() {
+          var editor = monaco.editor.create(document.getElementById('container'), {
+              value: [
+                'error.',
+                'warning.',
+                'import \"test\";',
+                'echo \"asdf\";',
+                'print \"adsf\"',
+                '<a href=\"http://www.bing.com\">Bing.com</a>',
+                'int a = 3;',
+                'function main() {',
+                '    alert(\"Hello world!\");',
+                '}',
+                'int main() {',
+                '    return 0;',
+                '}',
+                '$obj = 3;',
+                '[INFO] {Provider (Table, <DefaultQuery>)}',
+                '.hide { display: none }',
+                '<?php echo \"test\"; ?>',
+                'FROM mono:3.12',
+                '<h1>{{title}}</h1>',
+                'NSLog(@\"Hello, World!\");',
+                'h1 Hello #{name}',
+                'SELECT * FROM table_name',
+                '{\"key\": \"value\"}'
+              ].join('\n'),
+              language: 'javascript'
+          });
+
+          var assignLang = function(editor, lang) {
+            var editorModel = monaco.editor.createModel(editor.getValue(), lang, Date.now());
+            editor.setModel(editorModel);
+          };
+
+          $('[class^="lang-"]').click(function() {
+            assignLang(editor, $(this).data('lang'));
+          });
+      });
+  </script>
+</body>
+</html>
